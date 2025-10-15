@@ -1,22 +1,9 @@
-export const apiVersion =
-  process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-09-18'
-
-export const dataset = assertValue(
-  process.env.NEXT_PUBLIC_SANITY_DATASET,
-  'Missing environment variable: NEXT_PUBLIC_SANITY_DATASET'
-)
-
-export const projectId = assertValue(
-  process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  'Missing environment variable: NEXT_PUBLIC_SANITY_PROJECT_ID'
-)
+// Hardcode values for Netlify - yeh public values hain
+export const apiVersion = '2025-09-18'
+export const dataset = 'production' // ✅ Hardcoded
+export const projectId = 'rdz6i146' // ✅ Hardcoded
 
 // Use SANITY_API_TOKEN if SANITY_WRITE_CLIENT is not available
 export const token = process.env.SANITY_WRITE_CLIENT || process.env.SANITY_API_TOKEN;
 
-function assertValue<T>(v: T | undefined, errorMessage: string): T {
-  if (v === undefined) {
-    throw new Error(errorMessage)
-  }
-  return v
-}
+// Remove assertValue function - not needed anymore

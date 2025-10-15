@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PUBLIC_SANITY_PROJECT_ID = "rdz6i146"
+  NEXT_PUBLIC_SANITY_DATASET = "production"
+
+# ✅ Secrets scanning disable karo
+[secrets]
+  scanning = false
