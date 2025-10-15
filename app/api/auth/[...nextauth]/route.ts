@@ -1,16 +1,22 @@
-import { handlers } from "@/auth"
+// app/api/auth/[...nextauth]/route.ts
+import NextAuth from "next-auth"
+import GitHub from "next-auth/providers/github"
+import Google from "next-auth/providers/google"
 
-export const GET = handlers.GET
-export const POST = handlers.POST
-
-// ✅ OPTIONS method add karo for CORS
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  })
+const authOptions = {
+  providers: [
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_ID!,
+      clientSecret: process.env.AUTH_GITHUB_SECRET!,
+    }),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    }),
+  ],
+  secret: process.env.NEXTAUTH_SECRET!,
 }
+
+const handler = NextAuth(authOptions)
+
+export { handler as GET, handler as POST }
