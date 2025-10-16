@@ -15,9 +15,9 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
         console.log("🔍 URL Username:", decodedUsername);
         console.log("🔍 Session User:", session?.user);
 
-        // ✅ FIX: Find user by username OR email
+        // ✅ FIX: ONLY find user by username from URL, NOT session email
         const user = await client.fetch(
-            `*[_type == "user" && (username == $username || email == $email)][0]{
+            `*[_type == "user" && username == $username][0]{
                 _id,
                 username,
                 email,
@@ -25,13 +25,13 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                 Bio
             }`,
             { 
-                username: decodedUsername,
-                email: session?.user?.email // Session email se bhi search karo
+                username: decodedUsername
+                // ❌ Session email remove karo - yeh conflict create kar raha tha
             }
         );
 
         if (!user) {
-            console.log("❌ User not found");
+            console.log("❌ User not found for username:", decodedUsername);
             return notFound();
         }
 
@@ -58,6 +58,9 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
 
         console.log("📊 User projects:", userProjects?.length);
 
+        // ✅ Check if current user is viewing their own profile
+        const isOwnProfile = session?.user?.email === user.email;
+
         return (
             <section className='profile_box flex flex-col md:flex-row gap-8 mt-5 p-4'>
                 {/* Profile Card */}
@@ -74,14 +77,22 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                         {user.username}
                     </h2>
                     <p className="text-sm border font-light dark:border-white/[0.2] border-black/[0.2] rounded-full mt-4 text-black dark:text-white px-2 py-0.5">
-                        User
+                        {isOwnProfile ? "Your Profile" : "User Profile"}
                     </p>
+                    
+                    {/* ✅ Debug info */}
+                    {/* <div className="mt-4 text-xs text-gray-500 text-center">
+                        <p>URL Username: {decodedUsername}</p>
+                        <p>User Email: {user.email}</p>
+                        <p>Session Email: {session?.user?.email || "None"}</p>
+                        <p>Is Own Profile: {isOwnProfile ? "Yes" : "No"}</p>
+                    </div> */}
                 </div>
 
                 {/* Projects Section */}
                 <div className='project_all flex-1'>
                     <div className='heading text-2xl font-bold mb-8'>
-                        {session?.user?.email === user.email ? "Your Projects" : `${user.username}'s Projects`}
+                        {isOwnProfile ? "Your Projects" : `${user.username}'s Projects`}
                     </div>
                     <div>
                         {userProjects && userProjects.length > 0 ? (
@@ -95,13 +106,10 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                         ) : (
                             <div className="text-center py-8">
                                 <p className='text-gray-500 dark:text-gray-400 text-lg'>
-                                    {session?.user?.email === user.email 
+                                    {isOwnProfile 
                                         ? "You haven't created any projects yet." 
                                         : `${user.username} hasn't created any projects yet.`
                                     }
-                                </p>
-                                <p className='text-sm text-gray-400 mt-2'>
-                                    Debug: User ID: {user._id} | Username: {user.username} | Email: {user.email}
                                 </p>
                             </div>
                         )}
