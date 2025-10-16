@@ -2,7 +2,7 @@ import SearchForm from '@/components/SearchForm'
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect'
 import { ThreeDCardDemo } from '@/components/ThreeDCardDemo'
 import React from 'react'
-import { client } from '@/sanity/lib/client' // Direct client import karo
+import { client } from '@/sanity/lib/client'
 import { PROJECT_QUERY } from '@/sanity/lib/queries'
 
 export default async function Home({searchParams}: {
@@ -11,17 +11,30 @@ export default async function Home({searchParams}: {
   const query = searchParams?.query;
   
   console.log("🚀 Home Page Loaded");
+  console.log("🔍 Search Query:", query);
 
-  // Direct client.fetch use karo
   let posts = [];
+  let error = null;
+
   try {
-    posts = await client.fetch(PROJECT_QUERY);
-    console.log("✅ Sanity Data:", posts);
-  } catch (error) {
-    console.error("❌ Sanity Error:", error);
+    // ✅ CORRECT: Pass search parameter properly
+    const result = await client.fetch(PROJECT_QUERY, {
+      search: query ? `*${query}*` : ""  // Add wildcards for better search
+    });
+    
+    posts = result || [];
+    console.log("✅ Sanity Data Received:", posts);
+    console.log("📊 Total Posts:", posts.length);
+    
+    if (posts.length > 0) {
+      console.log("🔍 First Post Sample:", posts[0]);
+    }
+  } catch (err) {
+    error = err;
+    console.error("❌ Sanity Error:", err);
   }
 
-  const filteredPosts = query 
+  const filteredPosts = query && posts.length > 0
     ? posts.filter((post: any) => {
         const searchTerm = query.toLowerCase();
         const matches = 
@@ -33,7 +46,7 @@ export default async function Home({searchParams}: {
       })
     : posts;
 
-  console.log("🎯 Filtered Posts:", filteredPosts.length);
+  console.log("🎯 Filtered Posts Count:", filteredPosts.length);
 
   return(
     <>
@@ -56,7 +69,7 @@ export default async function Home({searchParams}: {
 
       <section className='ml-15 section_container'>
         <p className='text-30 mt-7'>
-          {query ? `Search results for "${query}"` : 'Projects'}
+          {query ? `Search results for "${query}"` : 'All Projects'}
         </p>
         
         {query && (
@@ -74,9 +87,16 @@ export default async function Home({searchParams}: {
               />
             ))
           ) : (
-            <p className='np-results'>
-              {query ? `No projects found for "${query}"` : 'No Projects Found'}
-            </p>
+            <div className="text-center py-10">
+              <p className='np-results text-lg text-gray-500'>
+                {query ? `No projects found for "${query}"` : 'No Projects Available'}
+              </p>
+              {!query && (
+                <p className="text-sm text-gray-400 mt-2">
+                  Create your first project to get started!
+                </p>
+              )}
+            </div>
           )}
         </ul>
       </section>
