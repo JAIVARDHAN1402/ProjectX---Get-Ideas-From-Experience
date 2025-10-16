@@ -18,7 +18,7 @@ export default function NavbarMenuStrip() {
             <Link href="/">Home</Link>
             <Link href="/project/create">Create</Link>
             <Link href="/" onClick={() => signOut()}>Logout</Link>
-            <Link href={`/user/${session.user.name}`}>
+            <Link href={`/user/${session.user.email?.split('@')[0] || 'user'}`}>
               {session.user.name}
             </Link>
             <Image

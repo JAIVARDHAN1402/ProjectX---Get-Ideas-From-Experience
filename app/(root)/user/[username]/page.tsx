@@ -1,7 +1,5 @@
-
 import { Project, ThreeDCardDemo } from '@/components/ThreeDCardDemo';
 import { EvervaultCard, Icon } from '@/components/ui/evervault-card';
-import { PROJECT_BY_user_QUERY } from '@/sanity/lib/queries';
 import { client } from '@/sanity/lib/client';
 import { notFound } from 'next/navigation';
 import React from 'react';
@@ -9,41 +7,57 @@ import { auth } from '@/auth';
 
 const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
     try {
-        
         const resolvedParams = await params;
-        
         const { username } = resolvedParams;
-        
         const decodedUsername = decodeURIComponent(username);
-        
         const session = await auth();
 
-        // Fetch user by DECODED username
+        console.log("🔍 URL Username:", decodedUsername);
+        console.log("🔍 Session User:", session?.user);
+
+        // ✅ FIX: Find user by username OR email
         const user = await client.fetch(
-            `*[_type == "user" && username == $username][0]{
+            `*[_type == "user" && (username == $username || email == $email)][0]{
                 _id,
                 username,
                 email,
                 image,
                 Bio
             }`,
-            { username: decodedUsername }  // ✅ Use decoded username
+            { 
+                username: decodedUsername,
+                email: session?.user?.email // Session email se bhi search karo
+            }
         );
-        // console.log('🔍 Step 6: User found:', user);
 
         if (!user) {
-            // console.log('❌ Step 7: User not found with decoded username:', decodedUsername);
+            console.log("❌ User not found");
             return notFound();
         }
 
-        // Fetch user's projects
-        // console.log('🔍 Step 8: Fetching user projects...');
-        const userProjects = await client.fetch(PROJECT_BY_user_QUERY, { id: user._id });
-        
+        console.log("✅ User found:", user);
 
-        // console.log('🔍 Step 9: User projects:', userProjects);
+        // ✅ FIX: Simple projects query
+        const userProjects = await client.fetch(
+            `*[_type == "project" && user._ref == $userId]{
+                _id,
+                title,
+                description,
+                category,
+                imageUrl,
+                user->{
+                    _id,
+                    username,
+                    email,
+                    image,
+                    Bio
+                }
+            }`,
+            { userId: user._id }
+        );
 
-        // console.log('✅ Step 10: Rendering page...');
+        console.log("📊 User projects:", userProjects?.length);
+
         return (
             <section className='profile_box flex flex-col md:flex-row gap-8 mt-5 p-4'>
                 {/* Profile Card */}
@@ -53,17 +67,18 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                     <Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
                     <Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" />
 
-                    <EvervaultCard ImageUrl={user?.image || "D:\DESKTOP\projecthub\public\profile.png"}/>
+                    {/* ✅ FIX: Correct image path */}
+                    <EvervaultCard ImageUrl={user?.image || ""} />
 
                     <h2 className="dark:text-white text-black mt-4 text-2xl font-bold">
-                        {`${user.username}`}
+                        {user.username}
                     </h2>
                     <p className="text-sm border font-light dark:border-white/[0.2] border-black/[0.2] rounded-full mt-4 text-black dark:text-white px-2 py-0.5">
                         User
                     </p>
                 </div>
 
-                {/* Projects Section - FIXED SPACING */}
+                {/* Projects Section */}
                 <div className='project_all flex-1'>
                     <div className='heading text-2xl font-bold mb-8'>
                         {session?.user?.email === user.email ? "Your Projects" : `${user.username}'s Projects`}
@@ -86,7 +101,7 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                                     }
                                 </p>
                                 <p className='text-sm text-gray-400 mt-2'>
-                                    User ID: {user._id} | Projects found: {userProjects?.length || 0}
+                                    Debug: User ID: {user._id} | Username: {user.username} | Email: {user.email}
                                 </p>
                             </div>
                         )}
@@ -95,13 +110,8 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
             </section>
         )
     } catch (error) {
-        console.error('❌ FINAL ERROR:', error);
-        return (
-            <div className="flex justify-center items-center h-64 flex-col">
-                <p className="text-xl text-red-500 mb-4">Error loading user profile</p>
-                <p className="text-sm text-gray-500">Check browser console for details</p>
-            </div>
-        );
+        console.error('❌ Profile page error:', error);
+        return notFound();
     }
 }
 
