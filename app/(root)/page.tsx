@@ -1,32 +1,39 @@
 import SearchForm from '@/components/SearchForm'
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect'
-import { ThreeDCardDemo } from '@/components/ThreeDCardDemo' // Remove Project import
+import { ThreeDCardDemo } from '@/components/ThreeDCardDemo'
 import React from 'react'
-import { sanityFetch } from '@/sanity/lib/live'
+import { client } from '@/sanity/lib/client' // Direct client import karo
 import { PROJECT_QUERY } from '@/sanity/lib/queries'
-import { auth } from '@/auth'
 
 export default async function Home({searchParams}: {
   searchParams?: {query?: string}
 }) {
   const query = searchParams?.query;
   
-  const params = {search: query || null}
-  const session = await auth();
+  console.log("🚀 Home Page Loaded");
 
-  const {data: posts} = await sanityFetch({query: PROJECT_QUERY, params})
+  // Direct client.fetch use karo
+  let posts = [];
+  try {
+    posts = await client.fetch(PROJECT_QUERY);
+    console.log("✅ Sanity Data:", posts);
+  } catch (error) {
+    console.error("❌ Sanity Error:", error);
+  }
 
   const filteredPosts = query 
-    ? posts.filter((post: any) => { // Change to 'any' temporarily
-        const matches = post.user?.username?.toLowerCase().includes(query.toLowerCase()) ||
-                       post.category?.toLowerCase().includes(query.toLowerCase()) ||
-                       post.description?.toLowerCase().includes(query.toLowerCase());
+    ? posts.filter((post: any) => {
+        const searchTerm = query.toLowerCase();
+        const matches = 
+          post.user?.username?.toLowerCase().includes(searchTerm) ||
+          post.category?.toLowerCase().includes(searchTerm) ||
+          post.description?.toLowerCase().includes(searchTerm) ||
+          post.title?.toLowerCase().includes(searchTerm);
         return matches;
       })
     : posts;
 
-  console.log("All posts:", posts); // Debug
-  console.log("Filtered posts:", filteredPosts.length);
+  console.log("🎯 Filtered Posts:", filteredPosts.length);
 
   return(
     <>
@@ -59,20 +66,18 @@ export default async function Home({searchParams}: {
         )}
         
         <ul className='card_grid grid grid-cols-1 sm:grid-col-1 lg:grid-cols-3 justify-center'>
-          {
-            filteredPosts.length > 0 ? (
-              filteredPosts.map((post: any) => ( // Change to 'any'
-                <ThreeDCardDemo 
-                  key={post._id} 
-                  project={post}
-                />
-              ))
-            ) : (
-              <p className='np-results'>
-                {query ? `No projects found for "${query}"` : 'No Projects Found'}
-              </p>
-            )
-          }
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post: any) => (
+              <ThreeDCardDemo 
+                key={post._id} 
+                project={post}
+              />
+            ))
+          ) : (
+            <p className='np-results'>
+              {query ? `No projects found for "${query}"` : 'No Projects Found'}
+            </p>
+          )}
         </ul>
       </section>
     </>
