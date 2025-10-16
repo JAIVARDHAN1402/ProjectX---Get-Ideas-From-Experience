@@ -9,23 +9,16 @@ import { auth } from '@/auth';
 
 const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
     try {
-        // console.log('🔍 Step 1: Starting page...');
         
         const resolvedParams = await params;
-        // console.log('🔍 Step 2: Params resolved:', resolvedParams);
         
         const { username } = resolvedParams;
-        // console.log('🔍 Step 3: Username from URL (encoded):', username);
         
-        // ✅ FIX: URL decode the username
         const decodedUsername = decodeURIComponent(username);
-        // console.log('🔍 Step 3.5: Username (decoded):', decodedUsername);
         
         const session = await auth();
-        // console.log('🔍 Step 4: Session user:', session?.user);
 
         // Fetch user by DECODED username
-        // console.log('🔍 Step 5: Fetching user by decoded username...');
         const user = await client.fetch(
             `*[_type == "user" && username == $username][0]{
                 _id,
@@ -46,6 +39,8 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
         // Fetch user's projects
         // console.log('🔍 Step 8: Fetching user projects...');
         const userProjects = await client.fetch(PROJECT_BY_user_QUERY, { id: user._id });
+        
+
         // console.log('🔍 Step 9: User projects:', userProjects);
 
         // console.log('✅ Step 10: Rendering page...');
@@ -58,7 +53,7 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                     <Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
                     <Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" />
 
-                    <EvervaultCard ImageUrl={session?.user?.image || "D:\DESKTOP\projecthub\public\profile.png"}/>
+                    <EvervaultCard ImageUrl={user?.image || "D:\DESKTOP\projecthub\public\profile.png"}/>
 
                     <h2 className="dark:text-white text-black mt-4 text-2xl font-bold">
                         {`${user.username}`}

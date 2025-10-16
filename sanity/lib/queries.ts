@@ -85,3 +85,19 @@ export const PROJECT_BY_user_QUERY = defineQuery(
   category,
   imageUrl
 }`);
+
+export const PROJECTS_BY_USERNAME_SIMPLE = `*[
+  _type == "project" && 
+  user->username == $username
+] {
+  _id,
+  title,
+  description,
+  category,
+  "imageUrl": image.asset->url,
+  user->{
+    _id,
+    username,
+    image
+  }
+}`
