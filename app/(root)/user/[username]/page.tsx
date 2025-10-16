@@ -1,22 +1,20 @@
 import { Project, ThreeDCardDemo } from '@/components/ThreeDCardDemo';
 import { EvervaultCard, Icon } from '@/components/ui/evervault-card';
 import { client } from '@/sanity/lib/client';
-import { notFound } from 'next/navigation';
 import React from 'react';
 import { auth } from '@/auth';
+import { Link } from 'lucide-react';
 
 const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
     try {
         const resolvedParams = await params;
         const { username } = resolvedParams;
-        const decodedUsername = decodeURIComponent(username);
         const session = await auth();
 
-        console.log("🔍 URL Username:", decodedUsername);
-        console.log("🔍 Session User:", session?.user);
+        console.log("🎯 Profile page accessed for username:", username);
 
-        // ✅ FIX: ONLY find user by username from URL, NOT session email
-        const user = await client.fetch(
+        // Pehle username se search karo
+        let user = await client.fetch(
             `*[_type == "user" && username == $username][0]{
                 _id,
                 username,
@@ -24,20 +22,41 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                 image,
                 Bio
             }`,
-            { 
-                username: decodedUsername
-                // ❌ Session email remove karo - yeh conflict create kar raha tha
-            }
+            { username }
         );
 
-        if (!user) {
-            console.log("❌ User not found for username:", decodedUsername);
-            return notFound();
+        // Agar username se nahi mila, toh session email se search karo
+        if (!user && session?.user?.email) {
+            console.log("🔍 User not found by username, trying session email...");
+            user = await client.fetch(
+                `*[_type == "user" && email == $email][0]{
+                    _id,
+                    username,
+                    email,
+                    image,
+                    Bio
+                }`,
+                { email: session.user.email }
+            );
         }
 
-        console.log("✅ User found:", user);
+        // Agar phir bhi nahi mila, toh simple profile dikhao
+        if (!user) {
+            console.log("❌ User not found, showing fallback profile");
+            return (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <h1 className="text-3xl font-bold">Welcome!</h1>
+                        <p className="mt-4 text-lg">Username: {username}</p>
+                        <p className="mt-2 text-gray-600">Create your profile to get started</p>
+                    </div>
+                </div>
+            );
+        }
 
-        // ✅ FIX: Simple projects query
+        console.log("✅ User found:", user.username);
+
+        // User ke projects fetch karo
         const userProjects = await client.fetch(
             `*[_type == "project" && user._ref == $userId]{
                 _id,
@@ -56,9 +75,7 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
             { userId: user._id }
         );
 
-        console.log("📊 User projects:", userProjects?.length);
-
-        // ✅ Check if current user is viewing their own profile
+        // Check if current user is viewing their own profile
         const isOwnProfile = session?.user?.email === user.email;
 
         return (
@@ -70,7 +87,6 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                     <Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
                     <Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" />
 
-                    {/* ✅ FIX: Correct image path */}
                     <EvervaultCard ImageUrl={user?.image || ""} />
 
                     <h2 className="dark:text-white text-black mt-4 text-2xl font-bold">
@@ -79,14 +95,6 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                     <p className="text-sm border font-light dark:border-white/[0.2] border-black/[0.2] rounded-full mt-4 text-black dark:text-white px-2 py-0.5">
                         {isOwnProfile ? "Your Profile" : "User Profile"}
                     </p>
-                    
-                    {/* ✅ Debug info */}
-                    {/* <div className="mt-4 text-xs text-gray-500 text-center">
-                        <p>URL Username: {decodedUsername}</p>
-                        <p>User Email: {user.email}</p>
-                        <p>Session Email: {session?.user?.email || "None"}</p>
-                        <p>Is Own Profile: {isOwnProfile ? "Yes" : "No"}</p>
-                    </div> */}
                 </div>
 
                 {/* Projects Section */}
@@ -111,6 +119,14 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                                         : `${user.username} hasn't created any projects yet.`
                                     }
                                 </p>
+                                {isOwnProfile && (
+                                    <Link 
+                                        href="/project/create"
+                                        className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        Create Your First Project
+                                    </Link>
+                                )}
                             </div>
                         )}
                     </div>
@@ -119,7 +135,14 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
         )
     } catch (error) {
         console.error('❌ Profile page error:', error);
-        return notFound();
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-3xl font-bold">Something went wrong</h1>
+                    <p className="mt-4">Please try again later</p>
+                </div>
+            </div>
+        );
     }
 }
 

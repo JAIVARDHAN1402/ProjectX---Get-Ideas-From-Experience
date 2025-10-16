@@ -3,7 +3,6 @@
 import React from "react";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import Link from "next/link";
-import { Session } from "inspector/promises";
 
 interface SanityUser {
   _id: string;
@@ -62,23 +61,26 @@ export function ThreeDCardDemo({ project }: ThreeDCardDemoProps) {
             <CardItem
               translateZ={20}
               as="button"
-              className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               View Details →
             </CardItem>
           </Link>
 
-          {project.user?.username && (
-            <CardItem
-                    translateZ={20}
-                    as="button"
-                    className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
-                >
-                  <Link href={`/user/${encodeURIComponent(project.user.username)}`}>
-                    {project.user.username}
-                    
-                  </Link>
-                </CardItem>
+          {project.user?.username ? (
+            <Link href={`/user/${project.user.username}`}>
+              <CardItem
+                translateZ={20}
+                as="button"
+                className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold cursor-pointer hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+              >
+                {project.user.username}
+              </CardItem>
+            </Link>
+          ) : (
+            <span className="px-4 py-2 rounded-xl bg-gray-500 text-white text-xs font-bold cursor-not-allowed">
+              Unknown User
+            </span>
           )}
         </div>
       </CardBody>
