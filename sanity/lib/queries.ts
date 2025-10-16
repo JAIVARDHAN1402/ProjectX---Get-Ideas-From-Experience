@@ -25,7 +25,7 @@ export const PROJECT_QUERY = defineQuery(
   views,
   description,
   category,
-  imageUrl
+  "imageUrl": image.asset->url
 }`
 );
 

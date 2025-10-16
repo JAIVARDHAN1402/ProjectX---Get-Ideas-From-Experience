@@ -17,36 +17,33 @@ export default async function Home({searchParams}: {
   let error = null;
 
   try {
-    // ✅ CORRECT: Pass search parameter properly
-    const result = await client.fetch(PROJECT_QUERY, {
-      search: query ? `*${query}*` : ""  // Add wildcards for better search
-    });
-    
-    posts = result || [];
+    // Simple fetch without search params first
+    posts = await client.fetch(PROJECT_QUERY);
     console.log("✅ Sanity Data Received:", posts);
     console.log("📊 Total Posts:", posts.length);
     
     if (posts.length > 0) {
-      console.log("🔍 First Post Sample:", posts[0]);
+      console.log("🔍 First Post:", posts[0]);
     }
   } catch (err) {
     error = err;
     console.error("❌ Sanity Error:", err);
   }
 
-  const filteredPosts = query && posts.length > 0
+  // Simple search filter
+  const filteredPosts = query 
     ? posts.filter((post: any) => {
         const searchTerm = query.toLowerCase();
-        const matches = 
-          post.user?.username?.toLowerCase().includes(searchTerm) ||
+        return (
+          post.title?.toLowerCase().includes(searchTerm) ||
           post.category?.toLowerCase().includes(searchTerm) ||
           post.description?.toLowerCase().includes(searchTerm) ||
-          post.title?.toLowerCase().includes(searchTerm);
-        return matches;
+          post.user?.username?.toLowerCase().includes(searchTerm)
+        );
       })
     : posts;
 
-  console.log("🎯 Filtered Posts Count:", filteredPosts.length);
+  console.log("🎯 Filtered Posts:", filteredPosts.length);
 
   return(
     <>
