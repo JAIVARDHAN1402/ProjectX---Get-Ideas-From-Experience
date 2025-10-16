@@ -1,10 +1,11 @@
-import { auth } from '@/auth';
+
 import { Project, ThreeDCardDemo } from '@/components/ThreeDCardDemo';
 import { EvervaultCard, Icon } from '@/components/ui/evervault-card';
 import { PROJECT_BY_user_QUERY } from '@/sanity/lib/queries';
 import { client } from '@/sanity/lib/client';
 import { notFound } from 'next/navigation';
 import React from 'react';
+import { auth } from '@/auth';
 
 const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
     try {
@@ -57,7 +58,7 @@ const Page = async ({ params }: { params: Promise<{ username: string }> }) => {
                     <Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
                     <Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" />
 
-                    <EvervaultCard ImageUrl={user.imageUrl} />
+                    <EvervaultCard ImageUrl={session?.user?.image || "D:\DESKTOP\projecthub\public\profile.png"}/>
 
                     <h2 className="dark:text-white text-black mt-4 text-2xl font-bold">
                         {`${user.username}`}
