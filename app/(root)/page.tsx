@@ -1,10 +1,10 @@
 import SearchForm from '@/components/SearchForm'
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect'
-import { ThreeDCardDemo, Project } from '@/components/ThreeDCardDemo' 
+import { ThreeDCardDemo } from '@/components/ThreeDCardDemo' // Remove Project import
 import React from 'react'
-import { auth } from '@/auth'
 import { sanityFetch } from '@/sanity/lib/live'
 import { PROJECT_QUERY } from '@/sanity/lib/queries'
+import { auth } from '@/auth'
 
 export default async function Home({searchParams}: {
   searchParams?: {query?: string}
@@ -17,14 +17,16 @@ export default async function Home({searchParams}: {
   const {data: posts} = await sanityFetch({query: PROJECT_QUERY, params})
 
   const filteredPosts = query 
-    ? posts.filter((post: Project) => { // Use Project type instead of ProjectTypeCard
-        const matches = post.user?.username?.toLowerCase().includes(query.toLowerCase()) ||post.category?.toLowerCase().includes(query.toLowerCase()) ||
+    ? posts.filter((post: any) => { // Change to 'any' temporarily
+        const matches = post.user?.username?.toLowerCase().includes(query.toLowerCase()) ||
+                       post.category?.toLowerCase().includes(query.toLowerCase()) ||
                        post.description?.toLowerCase().includes(query.toLowerCase());
         return matches;
       })
     : posts;
 
-  console.log("Filtered posts:", filteredPosts.length); 
+  console.log("All posts:", posts); // Debug
+  console.log("Filtered posts:", filteredPosts.length);
 
   return(
     <>
@@ -59,7 +61,7 @@ export default async function Home({searchParams}: {
         <ul className='card_grid grid grid-cols-1 sm:grid-col-1 lg:grid-cols-3 justify-center'>
           {
             filteredPosts.length > 0 ? (
-              filteredPosts.map((post: Project) => ( // Use Project type here
+              filteredPosts.map((post: any) => ( // Change to 'any'
                 <ThreeDCardDemo 
                   key={post._id} 
                   project={post}
