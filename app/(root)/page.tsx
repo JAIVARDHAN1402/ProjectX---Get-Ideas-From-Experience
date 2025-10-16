@@ -2,26 +2,47 @@ import SearchForm from '@/components/SearchForm'
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect'
 import { ThreeDCardDemo } from '@/components/ThreeDCardDemo'
 import React from 'react'
-import { sanityFetch } from '@/sanity/lib/live'
-import { PROJECT_QUERY } from '@/sanity/lib/queries'
+import { client } from '@/sanity/lib/client'
+
+// ✅ Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 export default async function Home({searchParams}: {
   searchParams?: {query?: string}
 }) {
   const query = searchParams?.query;
   
-  const params = {search: query || null}
-
-  const {data: posts} = await sanityFetch({query: PROJECT_QUERY, params})
+  // ✅ Direct client use karo with no caching
+  const posts = await client.fetch(
+    `*[_type == "project"]{
+      _id,
+      title,
+      description,
+      category,
+      imageUrl,
+      user->{
+        _id,
+        username,
+        email,
+        image,
+        Bio
+      }
+    }`,
+    {},
+    {
+      cache: 'no-store', // ✅ Important: No caching
+      next: { tags: ['projects'] }
+    }
+  )
 
   const filteredPosts = query 
-    ? posts.filter((post: any) => {
+    ? posts?.filter((post: any) => {
         const matches = post.user?.username?.toLowerCase().includes(query.toLowerCase()) ||
                        post.category?.toLowerCase().includes(query.toLowerCase()) ||
                        post.description?.toLowerCase().includes(query.toLowerCase());
         return matches;
-      })
-    : posts;
+      }) || []
+    : posts || [];
 
   return(
     <>
@@ -53,7 +74,7 @@ export default async function Home({searchParams}: {
           </div>
         )}
         
-        <ul className='card_grid grid grid-cols-1 sm:grid-col-1 lg:grid-cols-3 justify-center'>
+        <ul className='card_grid grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 justify-center gap-6'>
           {
             filteredPosts.length > 0 ? (
               filteredPosts.map((post: any) => (
@@ -63,9 +84,11 @@ export default async function Home({searchParams}: {
                 />
               ))
             ) : (
-              <p className='np-results'>
-                {query ? `No projects found for "${query}"` : 'No Projects Found'}
-              </p>
+              <div className="col-span-full text-center py-12">
+                <p className='text-gray-500 text-lg'>
+                  {query ? `No projects found for "${query}"` : 'No Projects Found'}
+                </p>
+              </div>
             )
           }
         </ul>
